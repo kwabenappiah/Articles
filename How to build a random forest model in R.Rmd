@@ -1,0 +1,198 @@
+---
+title: "Random Forest Application"
+author: "Isaac Owusu-Appiah"
+date: "June 24, 2024"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction
+
+This worksheet provides a step-by-step tutorial on building a Random Forest model and its application to real-world datasets. When relationships between predictor variables and a response variable are complex and non-linear, Random Forest, an ensemble method based on CART, provides highly accurate predictions. Unlike single decision trees that can suffer from high variance, Random Forest mitigates this issue, making it particularly effective for modeling non-linear relationships. The process is as follows:
+       
+       1. Take b bootstrapped samples from the original dataset
+       2. Build a decision tree for each bootstrapped sample
+       3. Average the predictions of each tree to come up with a final model.
+       
+ Random forest tend to produce much more accurate models compared to single decision trees and bagged models
+ 
+## Load the Necessary Packages
+
+First, we'll load the necessary packages relevant for this task. For this wine quality dataset project we need three packages:
+```{r set-up, global import echo = FALSE, warning=FALSE, message=FALSE}
+library(randomForest)
+library(readr)
+library(dplyr)
+library(ggplot2)
+```
+
+
+```{r, load the boston dataset}
+wine = read.csv('./data/quality_wine.csv', stringsAsFactors = FALSE)
+```
+
+## Fit the Random Forest Model
+
+```{r vew structure of winequality dataset, echo=FALSE}
+str(wine)
+```
+
+The dataset contains data of 3918 samples of wine with 13 features.
+
+```{r}
+# view first six rows of wine quality dataset
+head(wine)
+```
+
+```{r Explore the structure of the data}
+summary(wine)
+```
+
+The difference between the maximium and the 3rd Quantile indicate outliers in the features.
+
+
+## Visualizing the target data
+
+```{r, visualizing the quality feature}
+stem(wine$quality, 1)
+```
+`Insight`: 6 is the most frequent value occuring, followed by the value 5.The distribution of this feature seems to follow the normal distribution. Our model with not be bias towards any value in its prediction.
+
+# Examine data
+
+scatterplot to view relationship / correlations between variables
+
+```{r}
+wine$id <- NULL
+pairs(wine, pch = 15, col = 'steelblue')
+```
+
+
+```{r find number of rows with missing values, echo=FALSE}
+sum(!complete.cases(wine))
+```
+
+This dataset has 109 rows with missing values, before fitting a random forest model we'll fill in the missing values in each column with the column medians:
+
+```{r replace NAs with column medians}
+for (i in 1:ncol(wine)){
+  wine[,i][is.na(wine[,i])] <- median(wine[, i], na.rm = TRUE)
+}
+```
+
+
+```{r echo=TRUE}
+# To make this example reproducible
+set.seed(42)
+
+# fit the random forest model
+model <- randomForest(
+  formula = quality ~.,
+  data = wine
+)
+
+# display fitted model
+model
+```
+
+
+```{r}
+# find number of trees that produce lowest test MSE
+which.min(model$mse)
+```
+
+
+```{r echo=FALSE}
+# find RMSE of best model
+sqrt(model$mse[which.min(model$mse)])
+```
+
+From the output, we see that the model that produced the lowest test mean squared error(MSE) used 469 trees.
+
+We can see that the root mean squared error (RMSE) of the model was 0.3859118. This is understood that as the average difference between the predicted value for quality and the actual observed value.
+
+We can produce a plot of the test MSE based on the number of trees used:
+
+```{r}
+# Plot the test MSE by number of trees
+plot(model)
+```
+
+We will use the varimpPlot() function to create a plot that displays the importance of each predictor variable in the final model.
+
+```{r}
+# display variable importance plot
+varImpPlot(model)
+```
+
+The x-axis displays the average increase in node purity of the regression trees based on splitting on the various predictors displayed on the y-axis. From the plot, we can see that `alcohol` is the most important predictor variable followed closely by `density`.
+
+# Tune the Model
+
+By default, the randomForest() function uses 500 trees and (total predictors/3) randomly selected predictors as potential candidates at each split. We'll adjust these parameters by using the tuneRF() function.
+
+To find the optimal model we'ill use the following code specifications to create it:
+
+* ntreeTry : The number of trees to build the model.
+* mtryStart : The starting number of predictor variables to consider at each split.
+* stepFactor : The factor to increase by until the out-of-bag estimated error stops improving by a certain amount.
+* improve : The amount that the out-of-bag error needs to improve by to keep increasing the step factor.
+
+To generate the plot which shows the number of predictors used at each split on the x-axis and the out-of-bag (OOB) estimated error on the y-axis, when building the trees we use the code.
+
+```{r}
+model_tuned <- tuneRF(
+               x = wine[,-1], #define predictor variables
+               y = wine$quality, #define response variable
+               ntreeTry = 500,
+               mtryStart = 9, 
+               stepFactor = 1.5,
+               improve = 0.01,
+               trace = FALSE #don't show real-time progress
+               
+)
+```
+
+
+From the plot, we can see that the lowest out-of-bag (OOB) error is achieved by using 11 randomly chosen predictors at each split when building the trees.
+
+## Use the Final Model to Make Predictions
+
+Lastly, we can use the fitted random forest model to make predictions on new observations.
+
+```{r, echo=FALSE}
+# define new observation
+
+new <- data.frame(fixed.acidity = 6.4, free.sulfur.dioxide = 29, alcohol = 10.75, volatile.acidity = 0.54, total.sulfur.dioxide = 98, citric.acid = 0.22, density = 0.62305, residual.sugar = 1.2, pH = 5.4, chlorides = 0.072, sulphates = 0.64)
+
+# Use fitted tuneRF() model to predict quality value of new observation features
+predict(model, newdata = new)
+```
+
+Based on the values of the predictor variables, the fitted random forest model predicts that the quality value will be 5.842 of this particular wine.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
