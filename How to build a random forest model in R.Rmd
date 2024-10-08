@@ -11,15 +11,15 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Introduction
 
-This worksheet provides a step-by-step tutorial on building a Random Forest model and its application to real-world datasets. When relationships between predictor variables and a response variable are complex and non-linear, Random Forest, an ensemble method based on CART, provides highly accurate predictions. Unlike single decision trees that can suffer from high variance, Random Forest mitigates this issue, making it particularly effective for modeling non-linear relationships. The process is as follows:
-       
+This worksheet provides a step-by-step tutorial on building a Random Forest model and its application to real-world datasets. When we have a complex relationship between a set of predictor variables and a response variable then Random, which is essentially a collection of decision trees can be used to model such non-linear interactions. Random forest would provide a highly accurate predictions better than decision trees which suffers from high variance. The process used to build random fores model is as follows:
+
        1. Take b bootstrapped samples from the original dataset
        2. Build a decision tree for each bootstrapped sample
        3. Average the predictions of each tree to come up with a final model.
-       
- Random forest tend to produce much more accurate models compared to single decision trees and bagged models
+
+We should note that, Random forest tend to produce much more accurate models compared to single decision trees and bagged models
  
-## Load the Necessary Packages
+## step 1. Load the Necessary Packages
 
 First, we'll load the necessary packages relevant for this task. For this wine quality dataset project we need three packages:
 ```{r set-up, global import echo = FALSE, warning=FALSE, message=FALSE}
@@ -34,7 +34,7 @@ library(ggplot2)
 wine = read.csv('./data/quality_wine.csv', stringsAsFactors = FALSE)
 ```
 
-## Fit the Random Forest Model
+## step 2. Fit the Random Forest Model
 
 ```{r vew structure of winequality dataset, echo=FALSE}
 str(wine)
@@ -83,7 +83,6 @@ for (i in 1:ncol(wine)){
 }
 ```
 
-
 ```{r echo=TRUE}
 # To make this example reproducible
 set.seed(42)
@@ -97,7 +96,6 @@ model <- randomForest(
 # display fitted model
 model
 ```
-
 
 ```{r}
 # find number of trees that produce lowest test MSE
@@ -130,7 +128,7 @@ varImpPlot(model)
 
 The x-axis displays the average increase in node purity of the regression trees based on splitting on the various predictors displayed on the y-axis. From the plot, we can see that `alcohol` is the most important predictor variable followed closely by `density`.
 
-# Tune the Model
+## step 3. Tune the Model
 
 By default, the randomForest() function uses 500 trees and (total predictors/3) randomly selected predictors as potential candidates at each split. We'll adjust these parameters by using the tuneRF() function.
 
@@ -159,7 +157,7 @@ model_tuned <- tuneRF(
 
 From the plot, we can see that the lowest out-of-bag (OOB) error is achieved by using 11 randomly chosen predictors at each split when building the trees.
 
-## Use the Final Model to Make Predictions
+## step 4. Use the Final Model to Make Predictions
 
 Lastly, we can use the fitted random forest model to make predictions on new observations.
 
