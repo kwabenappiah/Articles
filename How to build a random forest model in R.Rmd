@@ -1,5 +1,5 @@
 ---
-title: "Random Forest Application"
+title: "Random Forest Algorithm Application"
 author: "Isaac Owusu-Appiah"
 date: "June 24, 2024"
 output: html_document
@@ -11,13 +11,11 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Introduction
 
-This worksheet provides a step-by-step tutorial on building a Random Forest model and its application to real-world datasets. When we have a complex relationship between a set of predictor variables and a response variable then Random, which is essentially a collection of decision trees can be used to model such non-linear interactions. Random forest would provide a highly accurate predictions better than decision trees which suffers from high variance. The process used to build random fores model is as follows:
+This worksheet provides a step-by-step tutorial on building a Random Forest model and its application to real-world datasets. When our task is to predict a continuous variable from a dataset where the relationship between a set of predictor variables and a response variable is complex and non-linear, then Random forest algorithm applied would produces a more accurate predictions than a single decision tree model which has the disadvantage to suffer high varaince when the model is applied on both halve of original dataset when split. Random forest provides a strong improvement over the decision tree, which process consists of applying bagging to the data and bootstrap sampling to the predictor variables at each step of split of the dataset. The process used to building random forest model is as follows:
 
-       1. Take b bootstrapped samples from the original dataset
-       2. Build a decision tree for each bootstrapped sample
-       3. Average the predictions of each tree to come up with a final model.
-
-We should note that, Random forest tend to produce much more accurate models compared to single decision trees and bagged models
+       1. Take n random samples (bootstrapped samples) from the full dataset
+       2. Build a decision tree model for each bootstrapped sample
+       3. Average the predictions of each tree model to come up with a final model.
  
 ## step 1. Load the Necessary Packages
 
@@ -25,24 +23,24 @@ First, we'll load the necessary packages relevant for this task. For this wine q
 ```{r set-up, global import echo = FALSE, warning=FALSE, message=FALSE}
 library(randomForest)
 library(readr)
-library(dplyr)
+library(caret)
+library(tidyverse)
 library(ggplot2)
 ```
 
-
-```{r, load the boston dataset}
+```{r, load the wine dataset}
 wine = read.csv('./data/quality_wine.csv', stringsAsFactors = FALSE)
 ```
 
 ## step 2. Fit the Random Forest Model
 
-```{r vew structure of winequality dataset, echo=FALSE}
+```{r view structure of winequality dataset, echo=FALSE}
 str(wine)
 ```
 
 The dataset contains data of 3918 samples of wine with 13 features.
 
-```{r}
+```{r Inspect the data}
 # view first six rows of wine quality dataset
 head(wine)
 ```
@@ -53,23 +51,9 @@ summary(wine)
 
 The difference between the maximium and the 3rd Quantile indicate outliers in the features.
 
-
-## Visualizing the target data
-
-```{r, visualizing the quality feature}
-stem(wine$quality, 1)
-```
-`Insight`: 6 is the most frequent value occuring, followed by the value 5.The distribution of this feature seems to follow the normal distribution. Our model with not be bias towards any value in its prediction.
-
-# Examine data
-
-scatterplot to view relationship / correlations between variables
-
 ```{r}
 wine$id <- NULL
-pairs(wine, pch = 15, col = 'steelblue')
 ```
-
 
 ```{r find number of rows with missing values, echo=FALSE}
 sum(!complete.cases(wine))
@@ -102,12 +86,10 @@ model
 which.min(model$mse)
 ```
 
-
 ```{r echo=FALSE}
 # find RMSE of best model
 sqrt(model$mse[which.min(model$mse)])
 ```
-
 From the output, we see that the model that produced the lowest test mean squared error(MSE) used 469 trees.
 
 We can see that the root mean squared error (RMSE) of the model was 0.3859118. This is understood that as the average difference between the predicted value for quality and the actual observed value.
@@ -153,8 +135,6 @@ model_tuned <- tuneRF(
                
 )
 ```
-
-
 From the plot, we can see that the lowest out-of-bag (OOB) error is achieved by using 11 randomly chosen predictors at each split when building the trees.
 
 ## step 4. Use the Final Model to Make Predictions
@@ -169,28 +149,4 @@ new <- data.frame(fixed.acidity = 6.4, free.sulfur.dioxide = 29, alcohol = 10.75
 # Use fitted tuneRF() model to predict quality value of new observation features
 predict(model, newdata = new)
 ```
-
-Based on the values of the predictor variables, the fitted random forest model predicts that the quality value will be 5.842 of this particular wine.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+Based on the values of the predictor variables, the fitted random forest model predicts that the quality of this particular wine is 5.842.
